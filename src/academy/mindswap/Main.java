@@ -10,10 +10,11 @@ public class Main {
 //        Board boardDiana = new Board();
 //        boardDiana.createBoard();
 //        boardDiana.printMatrix();
+//
+//        Game game = new Game();
+//
+//        game.start();
 
-        Game game = new Game();
-
-        game.start();
 //        game.compareBoards(4,7);
 //        game.compareBoards(5,8);
 //        game.compareBoards(3,9);
