@@ -19,12 +19,12 @@ public class Player {
         player.start();
     }
 
-    public void start()  {
+    public void start() {
 
         try {
             clientSocket = new Socket("localhost", 8080);
 
-            if(clientSocket.isConnected()) {
+            if (clientSocket.isConnected()) {
                 System.out.println("connected");
             }
 
@@ -34,8 +34,8 @@ public class Player {
             Thread serverReaderThread = new Thread(new ServerReader());
             serverReaderThread.start();
 
-            while(!clientSocket.isClosed()) {
-                String input = readUserInput();
+            while (!clientSocket.isClosed()) {
+                int input = readUserInput();
                 writeInput(input);
             }
 
@@ -44,50 +44,82 @@ public class Player {
         }
     }
 
-    public String readUserInput() {
-        String input = "";
+    public int readUserInput() {
+        int input = 0;
+
         try {
-            input = userInput.readLine();
+            input = Integer.parseInt(userInput.readLine());
         } catch (IOException e) {
             e.printStackTrace();
         }
         return input;
     }
 
-    public void writeInput(String input) {
+    public void writeInput(int input) {
         out.println();
     }
 
-    public void placeShips() {
-
+    public void pickRow() {
         try {
-            System.out.println("Pick row.");
-            String inputRow = userInput.readLine();
+            System.out.println("Pick row (1-10).");
 
-            System.out.println("Pick column.");
-            String inputColumn = userInput.readLine();
+            int inputRow = Integer.parseInt(userInput.readLine());
 
-            System.out.println("Pick direction.");
-            String inputDirection = userInput.readLine();
+            if (inputRow < 0 || inputRow > 10) {
+                System.out.println("Invalid row.");
+                pickRow();
+            }
 
-        } catch (java.io.IOException e){
+            out.println(inputRow);
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-//    public boolean addShip(int shipLength, int row, int col, char direction) {
-//
-//        // TODO:
-//        //  check values row, col,(1-10) direction (H/V)
-//        // check availability
-//        // if available: change to H
-//        // if not, ask again
-//
-//
-//
-//    }
+    public void pickCol() {
+        try {
+            System.out.println("Pick column (1-10).");
 
-    private class ServerReader implements Runnable{
+            int inputCol = Integer.parseInt(userInput.readLine());
+
+            if (inputCol < 0 || inputCol > 10) {
+                System.out.println("Invalid row.");
+                pickCol();
+            }
+
+            out.println(inputCol);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void pickDir() {
+        try {
+            System.out.println("Pick direction (0 = horizontal, 1 = vertical).");
+
+            int inputDir = Integer.parseInt(userInput.readLine());
+
+            if (inputDir < 0 || inputDir > 1) {
+                System.out.println("Invalid direction.");
+                pickDir();
+            }
+
+            out.println(inputDir);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void pickShipLocation() {
+            pickRow();
+            pickCol();
+            pickDir();
+    }
+
+    class ServerReader implements Runnable {
 
         private BufferedReader in;
 
@@ -96,7 +128,7 @@ public class Player {
             try {
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 String line = "";
-                while((line = in.readLine()) != null) {
+                while ((line = in.readLine()) != null) {
                     System.out.println(line);
                 }
             } catch (IOException e) {
@@ -104,5 +136,4 @@ public class Player {
             }
         }
     }
-
 }

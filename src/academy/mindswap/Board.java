@@ -1,6 +1,6 @@
 package academy.mindswap;
 
-import academy.mindswap.util.RandomGenerator;
+// import academy.mindswap.util.RandomGenerator; FIXME
 
 public class Board {
     private int width;
@@ -12,8 +12,7 @@ public class Board {
     private char miss = 'O';
     private int numberOfShips;
     private int numberOfShipsSunk;
-    private Ship[] ships;
-
+    // private Ship[] ships; FIXME
 
     public Board() {
         width = 10;
@@ -21,7 +20,7 @@ public class Board {
         matrix = new char[width][height];
         numberOfShips = 4;
         numberOfShipsSunk = 0;
-        ships = new Ship[numberOfShips];
+        // ships = new Ship[numberOfShips];
     }
 
     public void createBoard() {
@@ -33,29 +32,19 @@ public class Board {
         }
     }
 
-    public void placeShips() {
-
-        // receber coordenada, direção e tamanho do barco
-        // verificar se posições estão vazias
-        // se tiverem vazias, trocar posições para H
-
-//        ships[0] = new Ship(sizeOne);
-//        ships[1] = new Ship(sizeTwo);
-//        ships[2] = new Ship(sizeThree);
-
-
-
-        for (int i = 0; i < numberOfShips; i++) {
-            int randomCoordinateWidth = RandomGenerator.randomNumber(matrix.length);
-            int randomCoordinateHeight = RandomGenerator.randomNumber(matrix.length);
-
-            if (matrix[randomCoordinateWidth][randomCoordinateHeight] == water) {
-                matrix[randomCoordinateWidth][randomCoordinateHeight] = ship;
-                continue;
-            }
-            i--;
-        }
-    }
+//    public void placeShips() {
+//
+//        for (int i = 0; i < numberOfShips; i++) {
+//            int randomCoordinateWidth = RandomGenerator.randomNumber(matrix.length);
+//            int randomCoordinateHeight = RandomGenerator.randomNumber(matrix.length);
+//
+//            if (matrix[randomCoordinateWidth][randomCoordinateHeight] == water) {
+//                matrix[randomCoordinateWidth][randomCoordinateHeight] = ship;
+//                continue;
+//            }
+//            i--;
+//        }
+//    }
 
     public void printBoard() {
         System.out.print("   ");

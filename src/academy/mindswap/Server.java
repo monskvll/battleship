@@ -30,36 +30,44 @@ public class Server {
         System.out.println("STARTING SERVER, please wait...");
 
         try {
-            serverSocket = new ServerSocket(port);
-            ExecutorService cachedPool = Executors.newCachedThreadPool();
 
-            while(clientsConnected < NUMBER_OF_MAX_CLIENTS){
-                Socket socket = serverSocket.accept();
+                serverSocket = new ServerSocket(port);
 
-                System.out.println("User connected: " + socket.getInetAddress());
+                ExecutorService cachedPool = Executors.newCachedThreadPool();
 
-                PlayerHandler playerHandler = new PlayerHandler(socket);
-                playerList.add(playerHandler);
+            while (!serverSocket.isClosed()) {
 
-                cachedPool.submit(playerHandler);
+                while (clientsConnected < NUMBER_OF_MAX_CLIENTS) {
+                    Socket socket = serverSocket.accept();
 
-                clientsConnected++;
+                    System.out.println("User connected: " + socket.getInetAddress());
+
+                    PlayerHandler playerHandler = new PlayerHandler(socket);
+                    playerList.add(playerHandler);
+
+                    cachedPool.submit(playerHandler);
+
+                    clientsConnected++;
+                    System.out.println("test");
+                }
             }
+            System.out.println("Server socket closed: " + serverSocket.isClosed());
 
         }catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     class PlayerHandler implements Runnable {
 
         Socket clientSocket;
-        String username;
         PrintWriter out = null;
         BufferedReader in = null;
+
         Board myBoard;
         Board enemyBoard;
+        String username;
+        int numberOfShips = 4;
 
         public PlayerHandler(Socket clientSocket) throws IOException {
             this.clientSocket = clientSocket;
@@ -70,17 +78,18 @@ public class Server {
         @Override
         public void run() {
 
-            //TODO: Major method to include below methods (prepareBattle)
+            prepareBattle();
+
+            //TODO: Major method to include below methods
+            // (startBattle()
+
+        }
+
+        public void prepareBattle() {
             createBoards();
-
-            // place ships
+            //TODO: sendBoards() (from below) here ?
+            // use Arrays.deepToString ?
             placeShips();
-
-            //TODO: Major method to include below methods (startBattle)
-
-
-
-
         }
 
         public void createBoards() {
@@ -88,14 +97,26 @@ public class Server {
             enemyBoard.createBoard();
         }
 
+        public void sendBoards() {
+
+        }
+
         public void placeShips() {
             try {
-                //TODO: Validations on this side to check if ship can be placed
+                /* TODO: Validations on this side to check if ship can be placed
+                * check values row, col,(1-10) direction (H/V)
+                * check space availability
+                * * if available, change to H (board.ship)
+                * * if not, ask again
+                */
+
                 in.readLine();
             } catch(IOException e) {
                 e.printStackTrace();
             }
         }
+
+
     }
 
 //    public static void start(){
