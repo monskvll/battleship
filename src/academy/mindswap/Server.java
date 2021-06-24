@@ -67,20 +67,38 @@ public class Server {
         char result;
         char result2;
 
-
-
         while (player1.numberOfTimesHit < 14 && player2.numberOfTimesHit < 14) {
+            do {
+                do {
+                    player1.attack();
+                    result = player2.sufferAttack(player1.currentRow, player1.currentCol);
+                    if (result == 'E') {
+                        player1.out.println("Invalid play."); // TODO
+                    }
+                } while (result == 'E');
 
-            player1.attack();
-            result = player2.sufferAttack(player1.currentRow, player1.currentCol);
-            player1.changeEnemyBoard(result);
-            player1.sendBoards();
+                player1.changeEnemyBoard(result);
+                player1.sendBoards();
+                player2.sendBoards();
+
+            } while (result == 'X');
 
             if (player2.numberOfTimesHit < 14) {
-                player2.attack();
-                result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
-                player2.changeEnemyBoard(result2);
-                player2.sendBoards();
+
+                do {
+                    do {
+                        player2.attack();
+                        result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
+                        if (result2 == 'E') {
+                            player2.out.println("Invalid play."); // TODO
+                        }
+                    } while (result2 == 'E');
+
+                    player2.changeEnemyBoard(result2);
+                    player2.sendBoards();
+                    player1.sendBoards();
+
+                } while (result2 == 'X');
             }
         }
 
@@ -138,7 +156,6 @@ public class Server {
         public void sendBoards() {
             sendBoard(myBoard);
             sendBoard(enemyBoard);
-
         }
 
         public void sendBoard(Board board) {
@@ -331,14 +348,16 @@ public class Server {
 
             if (pointToHit == myBoard.getWater()) {
                 myBoard.getMatrix()[row][col] = myBoard.getMiss();
+                pointToHit = myBoard.getMiss();
             } else if (pointToHit == myBoard.getShip()) {
                 myBoard.getMatrix()[row][col] = myBoard.getHit();
                 numberOfTimesHit++;
+                pointToHit = myBoard.getHit();
             } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit()) {
-                System.out.println("Fix"); //FIXME
+                pointToHit = 'E';
             }
 
-                return pointToHit;
+            return pointToHit;
         }
 
         public void changeEnemyBoard(char result) {
