@@ -7,3 +7,5 @@ Place ships:
     // check availability (if it is out of bounds, if there is already a boat)
            // if ok place ship
            // if not repeat
+
+           Close readers/writer

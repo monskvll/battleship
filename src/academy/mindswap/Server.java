@@ -8,18 +8,14 @@ import static academy.mindswap.util.Messages.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.io.*;
 
 public class Server {
 
     public static int NUMBER_OF_MAX_CLIENTS = 2;
     static int clientsConnected = 0;
-    private static List<PlayerHandler> playerList;
+    private static CopyOnWriteArrayList<PlayerHandler> playerList;
     private int playersReady = 0;
 
     public static void main(String[] args) {
@@ -30,7 +26,7 @@ public class Server {
     }
 
     public void listen(int port) {
-        playerList = new LinkedList<>();
+        playerList = new CopyOnWriteArrayList<>();
 
         ServerSocket serverSocket = null;
 
@@ -64,6 +60,39 @@ public class Server {
         }
     }
 
+    public void fight() {
+
+        PlayerHandler player1 = playerList.get(0);
+        PlayerHandler player2 = playerList.get(1);
+        char result;
+        char result2;
+
+
+
+        while (player1.numberOfTimesHit < 14 && player2.numberOfTimesHit < 14) {
+
+            player1.attack();
+            result = player2.sufferAttack(player1.currentRow, player1.currentCol);
+            player1.changeEnemyBoard(result);
+            player1.sendBoards();
+
+            if (player2.numberOfTimesHit < 14) {
+                player2.attack();
+                result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
+                player2.changeEnemyBoard(result2);
+                player2.sendBoards();
+            }
+        }
+
+
+    }
+
+    public void checkIfPlayersReady() {
+        if (playersReady == NUMBER_OF_MAX_CLIENTS) {
+            fight();
+        }
+    }
+
     class PlayerHandler implements Runnable {
 
         Socket clientSocket;
@@ -77,6 +106,7 @@ public class Server {
         int currentRow;
         int currentCol;
         int currentDir;
+        int numberOfTimesHit;
 
         public PlayerHandler(Socket clientSocket) throws IOException {
             this.clientSocket = clientSocket;
@@ -91,37 +121,25 @@ public class Server {
         @Override
         public void run() {
             prepareBattle();
-
-            if (playersReady == NUMBER_OF_MAX_CLIENTS) {
-                startBattle();
-            }
-
-
-            //TODO: Major method to include below methods
-            // (startBattle()
-            //    include enemyBoard.createBoard() + sendBoard(enemyBoard) in this battle phase
+            sendBoards();
+            checkIfPlayersReady();
 
         }
 
         public void prepareBattle() {
             myBoard.createBoard();
+            enemyBoard.createBoard();
+
             sendBoard(myBoard);
             placeShips();
             playersReady++;
         }
 
-        public void startBattle() {
+        public void sendBoards() {
             sendBoard(myBoard);
-            enemyBoard.createBoard();
             sendBoard(enemyBoard);
-            attack();
-        }
 
-        public void attack() {
-            askRow();
-            askCol();
         }
-
 
         public void sendBoard(Board board) {
             StringBuffer stringBuffer = new StringBuffer();
@@ -300,12 +318,33 @@ public class Server {
                 e.printStackTrace();
             }
         }
+
+        public void attack() {
+            askRow();
+            askCol();
+
+        }
+
+        public char sufferAttack(int row, int col) {
+
+            char pointToHit = myBoard.getMatrix()[row][col];
+
+            if (pointToHit == myBoard.getWater()) {
+                myBoard.getMatrix()[row][col] = myBoard.getMiss();
+            } else if (pointToHit == myBoard.getShip()) {
+                myBoard.getMatrix()[row][col] = myBoard.getHit();
+                numberOfTimesHit++;
+            } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit()) {
+                System.out.println("Fix"); //FIXME
+            }
+
+                return pointToHit;
+        }
+
+        public void changeEnemyBoard(char result) {
+            enemyBoard.getMatrix()[currentRow][currentCol] = result;
+        }
+
+
     }
 }
-
-
-
-
-
-
-
