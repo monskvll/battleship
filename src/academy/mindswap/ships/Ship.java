@@ -1,13 +1,14 @@
-package academy.mindswap;
+package academy.mindswap.ships;
 
 public class Ship {
     private int row;
     private int col;
     private int length;
     private char direction;
+    private ShipType shipType;
 
     public Ship(int length) {
-        this.length = length;
+        length = length;
     }
 
     public void setPosition(int row, int col) {
