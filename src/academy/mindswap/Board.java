@@ -12,7 +12,6 @@ public class Board {
     private char miss = 'O';
     private int numberOfShips;
     private int numberOfShipsSunk;
-    // private Ship[] ships; FIXME
 
     public Board() {
         width = 10;
@@ -20,7 +19,6 @@ public class Board {
         matrix = new char[width][height];
         numberOfShips = 4;
         numberOfShipsSunk = 0;
-        // ships = new Ship[numberOfShips];
     }
 
     public void createBoard() {
@@ -32,38 +30,6 @@ public class Board {
         }
     }
 
-//    public void placeShips() {
-//
-//        for (int i = 0; i < numberOfShips; i++) {
-//            int randomCoordinateWidth = RandomGenerator.randomNumber(matrix.length);
-//            int randomCoordinateHeight = RandomGenerator.randomNumber(matrix.length);
-//
-//            if (matrix[randomCoordinateWidth][randomCoordinateHeight] == water) {
-//                matrix[randomCoordinateWidth][randomCoordinateHeight] = ship;
-//                continue;
-//            }
-//            i--;
-//        }
-//    }
-
-    public void printBoard() {
-        System.out.print("   ");
-        for (int i = 0; i < matrix.length; i++) {
-            System.out.print((i + 1) + " ");
-        }
-        System.out.println();
-        for (int i = 0; i < matrix.length; i++) {
-            if (i < 9) {
-                System.out.print(" ");
-            }
-            System.out.print((i + 1) + " ");
-            for (int j = 0; j < matrix[i].length; j++) {
-                System.out.print(matrix[i][j] + " ");
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
 
     public void hit(int row, int col) {
         matrix[row][col] = hit;
@@ -79,5 +45,21 @@ public class Board {
 
     public void setMatrix(char[][] matrix) {
         this.matrix = matrix;
+    }
+
+    public char getWater() {
+        return water;
+    }
+
+    public char getShip() {
+        return ship;
+    }
+
+    public char getHit() {
+        return hit;
+    }
+
+    public char getMiss() {
+        return miss;
     }
 }

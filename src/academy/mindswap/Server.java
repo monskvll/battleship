@@ -1,15 +1,16 @@
 package academy.mindswap;
 
-import academy.mindswap.ships.Ship;
 import academy.mindswap.ships.ShipType;
+import academy.mindswap.util.Messages;
+
 import static academy.mindswap.util.Messages.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.io.*;
@@ -19,6 +20,7 @@ public class Server {
     public static int NUMBER_OF_MAX_CLIENTS = 2;
     static int clientsConnected = 0;
     private static List<PlayerHandler> playerList;
+    private int playersReady = 0;
 
     public static void main(String[] args) {
         int PORT = 8080;
@@ -32,13 +34,13 @@ public class Server {
 
         ServerSocket serverSocket = null;
 
-        System.out.println("STARTING SERVER, please wait...");
+        System.out.println(SERVER_STARTING);
 
         try {
 
-                serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port);
 
-                ExecutorService cachedPool = Executors.newCachedThreadPool();
+            ExecutorService cachedPool = Executors.newCachedThreadPool();
 
             while (!serverSocket.isClosed()) {
 
@@ -53,12 +55,11 @@ public class Server {
                     cachedPool.submit(playerHandler);
 
                     clientsConnected++;
-                    System.out.println("test");
                 }
             }
             System.out.println("Server socket closed: " + serverSocket.isClosed());
 
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -73,7 +74,9 @@ public class Server {
         Board enemyBoard;
         String username;
         ShipType[] ships;
-        int numberOfShips = 4;
+        int currentRow;
+        int currentCol;
+        int currentDir;
 
         public PlayerHandler(Socket clientSocket) throws IOException {
             this.clientSocket = clientSocket;
@@ -82,16 +85,21 @@ public class Server {
             myBoard = new Board();
             enemyBoard = new Board();
             ships = new ShipType[]{ShipType.DESTROYER, ShipType.SUBMARINE, ShipType.BATTLESHIP, ShipType.CARRIER};
-
-            }
+        }
 
 
         @Override
         public void run() {
             prepareBattle();
 
+            if (playersReady == NUMBER_OF_MAX_CLIENTS) {
+                startBattle();
+            }
+
+
             //TODO: Major method to include below methods
             // (startBattle()
+            //    include enemyBoard.createBoard() + sendBoard(enemyBoard) in this battle phase
 
         }
 
@@ -99,16 +107,21 @@ public class Server {
             myBoard.createBoard();
             sendBoard(myBoard);
             placeShips();
-            //TODO: sendBoards() (from below) here ?
-            // use Arrays.deepToString ?
-           // placeShips();
+            playersReady++;
         }
 
-        // TODO: Maybe this isn't needed
-        public void createBoards() {
-            myBoard.createBoard();
+        public void startBattle() {
+            sendBoard(myBoard);
             enemyBoard.createBoard();
+            sendBoard(enemyBoard);
+            attack();
         }
+
+        public void attack() {
+            askRow();
+            askCol();
+        }
+
 
         public void sendBoard(Board board) {
             StringBuffer stringBuffer = new StringBuffer();
@@ -134,114 +147,161 @@ public class Server {
             out.flush();
         }
 
-        public void placeShip(ShipType shipType) {
-            out.println("Place your Destroyer (size: 2)");
-            try {
-                in.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
         public void placeShips() {
 
-            int row;
             for (int i = 0; i < ships.length; i++) {
-                out.println("Place your " + ships[i].getShipName() + " (size: " + ships[i].getShipLength() + ").");
-                row = askRow();
-                System.out.println(row);
+                out.printf(PLACE_SHIP, ships[i].getShipName(), ships[i].getShipLength());
+
+                do {
+                    askRow();
+                    askCol();
+                    askDir();
+                }
+                while (!checkShipPlacement(ships[i]));
+
+                drawShip(ships[i]);
+                sendBoard(myBoard);
+
             }
-
-
         }
 
-        private int askRow() {
-            int userInputInt = 0;
-            String userInputString;
-            try {
-                out.println(INSERT_ROW);
+        public boolean checkShipPlacement(ShipType shipType) {
+            if (myBoard.getMatrix()[currentRow][currentCol] != myBoard.getWater()) {
+                out.println(INVALID_POSITION);
+                return false;
+            }
 
-                userInputString = in.readLine();
-
-                try {
-                    userInputInt = Integer.parseInt(userInputString);
-                    if (userInputInt < 0 || userInputInt > 10) {
-                        out.println("TRY ERROR");
-                        out.println(INVALID_ROW);
-                        askRow();
+            switch (currentDir) {
+                case 0:
+                    if (currentCol + shipType.getShipLength() > 9) {
+                        out.println(OUT_OF_BORDERS);
+                        return false;
                     }
-                } catch (NumberFormatException e) {
-                    out.println("Exception!");
-                    out.println(INVALID_ROW);
-                    askRow();
-                }
 
+                    for (int i = 1; i < shipType.getShipLength(); i++) {
+                        if (myBoard.getMatrix()[currentRow][currentCol + i] != myBoard.getWater()) {
+                            out.println(INVALID_POSITION);
+                            return false;
+                        }
+                    }
+                    return true;
+
+                case 1:
+                    if (currentRow + shipType.getShipLength() > 9) {
+                        out.println(OUT_OF_BORDERS);
+                        return false;
+                    }
+
+                    for (int i = 1; i < shipType.getShipLength(); i++) {
+                        if (myBoard.getMatrix()[currentRow + i][currentCol] != myBoard.getWater()) {
+                            out.println(INVALID_POSITION);
+                            return false;
+                        }
+                    }
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+
+        public void drawShip(ShipType shipType) {
+
+            switch (currentDir) {
+                case 0:
+                    for (int i = 0; i < shipType.getShipLength(); i++) {
+                        myBoard.getMatrix()[currentRow][currentCol + i] = myBoard.getShip();
+                    }
+                    break;
+
+                case 1:
+                    for (int i = 0; i < shipType.getShipLength(); i++) {
+                        myBoard.getMatrix()[currentRow + i][currentCol] = myBoard.getShip();
+                    }
+                    break;
+            }
+        }
+
+
+        private void askRow() {
+
+            int userInputInt = 0;
+
+            out.println(INSERT_ROW);
+
+            try {
+                String userInputString = in.readLine();
+                userInputInt = Integer.parseInt(userInputString);
+
+                if (userInputInt > 0 && userInputInt <= 10) {
+                    currentRow = userInputInt - 1; // -1 to ensure array/console print fidelity
+                    return;
+                }
+                out.println(INVALID_ROW);
+                askRow();
+
+            } catch (NumberFormatException e) {
+                out.println(INVALID_ROW);
+                askRow();
+            } catch (IOException e) {
+                e.printStackTrace();
+
+            }
+        }
+
+        public void askCol() {
+
+            int userInputInt = 0;
+
+            out.println(INSERT_COL);
+
+            try {
+                String userInputString = in.readLine();
+                userInputInt = Integer.parseInt(userInputString);
+
+                if (userInputInt > 0 && userInputInt <= 10) {
+                    currentCol = userInputInt - 1; // -1 to ensure array/console print fidelity
+                    return;
+                }
+                out.println(INVALID_COL);
+                askCol();
+
+            } catch (NumberFormatException e) {
+                out.println(INVALID_COL);
+                askCol();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return userInputInt;
         }
 
+        public void askDir() {
 
+            int userInputInt = 0;
+
+            out.println(INSERT_DIR);
+
+            try {
+                String userInputString = in.readLine();
+                userInputInt = Integer.parseInt(userInputString);
+
+                if (userInputInt == 0 || userInputInt == 1) {
+                    currentDir = userInputInt;
+                    return;
+                }
+                out.println(INVALID_DIR);
+                askDir();
+
+            } catch (NumberFormatException e) {
+                out.println(INVALID_DIR);
+                askDir();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
-
-//    public static void start(){
-//
-//        game = new Game(players.get(0), players.get(1));
-//
-//        try{
-//            game.start();
-//        }catch(Exception e){
-//            System.out.println("ESCREVER ALGUM ERRO DE COMEÇO"); // MUDAR
-//        }
-//    }
-
-
-
-
-
-
-
-
-
-
-
-    /*public void start() throws IOException {
-
-        ExecutorService fixedClients = Executors.newFixedThreadPool(2);
-
-        while (serverSocket.isBound()) {
-
-            Socket clientSocket = serverSocket.accept();
-            //fixedClients.submit(new ClientHandler(clientSocket));
-
-        }
-
-        fixedClients.shutdown();
-
-    }*/
-
-
-//    private class ClientHandler implements Runnable {
-//
-//        private Socket clientSocket;
-//        private PrintWriter out = null;
-//        private BufferedReader in = null;
-//        private String name;
-//
-//        public ClientHandler(Socket clientSocket) {
-//            this.clientSocket = clientSocket;
-//
-//        }
-//
-//        @Override
-//        public void run() {
-//
-//        }
-//
-//
-//    }
 
 
 

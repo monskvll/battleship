@@ -56,7 +56,7 @@ public class Player {
     }
 
     public void writeInput(String input) {
-        out.println();
+        out.println(input);
     }
 
     class ServerReader implements Runnable {
