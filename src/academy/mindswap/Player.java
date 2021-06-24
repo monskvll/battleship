@@ -25,7 +25,7 @@ public class Player {
             clientSocket = new Socket("localhost", 8080);
 
             if (clientSocket.isConnected()) {
-                System.out.println("connected");
+                System.out.println("Connected.");
             }
 
             userInput = new BufferedReader(new InputStreamReader(System.in));
@@ -35,7 +35,7 @@ public class Player {
             serverReaderThread.start();
 
             while (!clientSocket.isClosed()) {
-                int input = readUserInput();
+                String input = readUserInput();
                 writeInput(input);
             }
 
@@ -44,18 +44,18 @@ public class Player {
         }
     }
 
-    public int readUserInput() {
-        int input = 0;
+    public String readUserInput() {
+        String input = "";
 
         try {
-            input = Integer.parseInt(userInput.readLine());
+            input = userInput.readLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return input;
     }
 
-    public void writeInput(int input) {
+    public void writeInput(String input) {
         out.println();
     }
 
@@ -131,6 +131,7 @@ public class Player {
                 while ((line = in.readLine()) != null) {
                     System.out.println(line);
                 }
+
             } catch (IOException e) {
                 e.printStackTrace();
             }

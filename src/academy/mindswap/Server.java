@@ -73,6 +73,8 @@ public class Server {
             this.clientSocket = clientSocket;
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            myBoard = new Board();
+            enemyBoard = new Board();
         }
 
         @Override
@@ -86,19 +88,41 @@ public class Server {
         }
 
         public void prepareBattle() {
-            createBoards();
+            myBoard.createBoard();
+            sendBoard(myBoard);
             //TODO: sendBoards() (from below) here ?
             // use Arrays.deepToString ?
-            placeShips();
+           // placeShips();
         }
 
+        // TODO: Maybe this isn't needed
         public void createBoards() {
             myBoard.createBoard();
             enemyBoard.createBoard();
         }
 
-        public void sendBoards() {
+        public void sendBoard(Board board) {
+            StringBuilder stringBuilder = new StringBuilder();
 
+            stringBuilder.append("   ");
+            for (int i = 0; i < board.getMatrix().length; i++) {
+                stringBuilder.append((i + 1) + " ");
+            }
+            stringBuilder.append("\n");
+            for (int i = 0; i < board.getMatrix().length; i++) {
+                if (i < 9) {
+                    stringBuilder.append(" ");
+                }
+                stringBuilder.append((i + 1) + " ");
+                for (int j = 0; j < board.getMatrix()[i].length; j++) {
+                    stringBuilder.append(board.getMatrix()[i][j] + " ");
+                }
+                stringBuilder.append("\n");
+            }
+            stringBuilder.append("\n");
+
+            out.print(stringBuilder);
+            out.flush();
         }
 
         public void placeShips() {
