@@ -59,66 +59,6 @@ public class Player {
         out.println();
     }
 
-    public void pickRow() {
-        try {
-            System.out.println("Pick row (1-10).");
-
-            int inputRow = Integer.parseInt(userInput.readLine());
-
-            if (inputRow < 0 || inputRow > 10) {
-                System.out.println("Invalid row.");
-                pickRow();
-            }
-
-            out.println(inputRow);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void pickCol() {
-        try {
-            System.out.println("Pick column (1-10).");
-
-            int inputCol = Integer.parseInt(userInput.readLine());
-
-            if (inputCol < 0 || inputCol > 10) {
-                System.out.println("Invalid row.");
-                pickCol();
-            }
-
-            out.println(inputCol);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void pickDir() {
-        try {
-            System.out.println("Pick direction (0 = horizontal, 1 = vertical).");
-
-            int inputDir = Integer.parseInt(userInput.readLine());
-
-            if (inputDir < 0 || inputDir > 1) {
-                System.out.println("Invalid direction.");
-                pickDir();
-            }
-
-            out.println(inputDir);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void pickShipLocation() {
-            pickRow();
-            pickCol();
-            pickDir();
-    }
-
     class ServerReader implements Runnable {
 
         private BufferedReader in;

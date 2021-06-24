@@ -1,8 +1,13 @@
 package academy.mindswap;
 
+import academy.mindswap.ships.Ship;
+import academy.mindswap.ships.ShipType;
+import static academy.mindswap.util.Messages.*;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -67,6 +72,7 @@ public class Server {
         Board myBoard;
         Board enemyBoard;
         String username;
+        ShipType[] ships;
         int numberOfShips = 4;
 
         public PlayerHandler(Socket clientSocket) throws IOException {
@@ -75,11 +81,13 @@ public class Server {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             myBoard = new Board();
             enemyBoard = new Board();
-        }
+            ships = new ShipType[]{ShipType.DESTROYER, ShipType.SUBMARINE, ShipType.BATTLESHIP, ShipType.CARRIER};
+
+            }
+
 
         @Override
         public void run() {
-
             prepareBattle();
 
             //TODO: Major method to include below methods
@@ -90,6 +98,7 @@ public class Server {
         public void prepareBattle() {
             myBoard.createBoard();
             sendBoard(myBoard);
+            placeShips();
             //TODO: sendBoards() (from below) here ?
             // use Arrays.deepToString ?
            // placeShips();
@@ -102,46 +111,80 @@ public class Server {
         }
 
         public void sendBoard(Board board) {
-            StringBuilder stringBuilder = new StringBuilder();
+            StringBuffer stringBuffer = new StringBuffer();
 
-            stringBuilder.append("   ");
+            stringBuffer.append("   ");
             for (int i = 0; i < board.getMatrix().length; i++) {
-                stringBuilder.append((i + 1) + " ");
+                stringBuffer.append((i + 1) + " ");
             }
-            stringBuilder.append("\n");
+            stringBuffer.append("\n");
             for (int i = 0; i < board.getMatrix().length; i++) {
                 if (i < 9) {
-                    stringBuilder.append(" ");
+                    stringBuffer.append(" ");
                 }
-                stringBuilder.append((i + 1) + " ");
+                stringBuffer.append((i + 1) + " ");
                 for (int j = 0; j < board.getMatrix()[i].length; j++) {
-                    stringBuilder.append(board.getMatrix()[i][j] + " ");
+                    stringBuffer.append(board.getMatrix()[i][j] + " ");
                 }
-                stringBuilder.append("\n");
+                stringBuffer.append("\n");
             }
-            stringBuilder.append("\n");
+            stringBuffer.append("\n");
 
-            out.print(stringBuilder);
+            out.print(stringBuffer);
             out.flush();
         }
 
-        public void placeShips() {
+        public void placeShip(ShipType shipType) {
+            out.println("Place your Destroyer (size: 2)");
             try {
-                /* TODO: Validations on this side to check if ship can be placed
-                * check values row, col,(1-10) direction (H/V)
-                * check space availability
-                * * if available, change to H (board.ship)
-                * * if not, ask again
-                */
-
                 in.readLine();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
+        public void placeShips() {
+
+            int row;
+            for (int i = 0; i < ships.length; i++) {
+                out.println("Place your " + ships[i].getShipName() + " (size: " + ships[i].getShipLength() + ").");
+                row = askRow();
+                System.out.println(row);
+            }
+
+
+        }
+
+        private int askRow() {
+            int userInputInt = 0;
+            String userInputString;
+            try {
+                out.println(INSERT_ROW);
+
+                userInputString = in.readLine();
+
+                try {
+                    userInputInt = Integer.parseInt(userInputString);
+                    if (userInputInt < 0 || userInputInt > 10) {
+                        out.println("TRY ERROR");
+                        out.println(INVALID_ROW);
+                        askRow();
+                    }
+                } catch (NumberFormatException e) {
+                    out.println("Exception!");
+                    out.println(INVALID_ROW);
+                    askRow();
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return userInputInt;
+        }
+
 
     }
+}
 
 //    public static void start(){
 //
@@ -156,7 +199,7 @@ public class Server {
 
 
 
-}
+
 
 
 
