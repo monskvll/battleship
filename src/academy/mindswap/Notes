@@ -1,9 +1,7 @@
 TODO:
 
-- Check if whole ship is hit and therefore destroyed;
-
-- Print divisors/win+loss/ship hit message;
 - Finish error/other messages;
 - Search for all FIXME / TODO tags;
 - Write documentation;
 - Close readers/writers/sockets
+- Server/board ->

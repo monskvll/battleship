@@ -15,7 +15,7 @@ import java.io.*;
 
 public class Server {
 
-    public static int NUMBER_OF_MAX_CLIENTS = 2;
+    public static int NUMBER_OF_MAX_CLIENTS = 4;
     static int clientsConnected = 0;
     private static CopyOnWriteArrayList<PlayerHandler> playerList;
     private int playersReady = 0;
@@ -68,6 +68,7 @@ public class Server {
 
         char invalidPlayChar = 'E';
         char successiveHitChar = 'X';
+        char successiveShipwreckChar = '@';
         char result;
         char result2;
 
@@ -97,17 +98,31 @@ public class Server {
 
                 do {
                     player1.attack();
+
                     result = player2.sufferAttack(player1.currentRow, player1.currentCol);
-                    if (result == invalidPlayChar) {
-                        player1.sendMessage(INVALID_PLAYER_PLAY);
+
+                    switch (result) {
+                        case 'O':
+                            player1.changeEnemyBoard(result);
+                            break;
+                        case 'X':
+                            if(!checkIfShipDestroyed(player2, player1)) {
+                                player1.changeEnemyBoard(result);
+                            }
+                            break;
+                        case 'E':
+                            player1.sendMessage(INVALID_PLAYER_PLAY);
+                            break;
+                        default:
+                            break;
                     }
+
                 } while (result == invalidPlayChar);
 
-                player1.changeEnemyBoard(result);
                 player1.sendBoards();
                 player2.sendBoards();
 
-            } while (result == successiveHitChar && player2.numberOfTimesHit < 14);
+            } while ((result == successiveShipwreckChar || result == successiveHitChar) && player2.numberOfTimesHit < 14);
 
             if (player2.numberOfTimesHit < 14) {
 
@@ -118,20 +133,59 @@ public class Server {
                     do {
                         player2.attack();
                         result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
-                        if (result2 == invalidPlayChar) {
-                            player2.sendMessage(INVALID_PLAYER_PLAY);
+
+                        switch (result2) {
+                            case 'O':
+                                player2.changeEnemyBoard(result2);
+                                break;
+                            case 'X':
+                                if(!checkIfShipDestroyed(player1, player2)) {
+                                    player2.changeEnemyBoard(result2);
+                                }
+                                break;
+                            case 'E':
+                                player2.sendMessage(INVALID_PLAYER_PLAY);
+                                break;
+                            default:
+                                break;
                         }
+
                     } while (result2 == invalidPlayChar);
 
-                    player2.changeEnemyBoard(result2);
                     player2.sendBoards();
                     player1.sendBoards();
 
-                } while (result2 == successiveHitChar && player1.numberOfTimesHit < 14);
+                } while ((result2 == successiveShipwreckChar || result2 == successiveHitChar) && player1.numberOfTimesHit < 14);
             }
         }
 
         checkWinnerAndLoser(player1, player2);
+    }
+
+    public boolean checkIfShipDestroyed(PlayerHandler suffering, PlayerHandler attacker) {
+        int shipIndex = -1;
+
+        for (Point key : suffering.shipsCoordinates.keySet()) {
+            if (key.getX() == attacker.currentRow && key.getY() == attacker.currentCol) {
+                shipIndex = suffering.shipsCoordinates.remove(key);
+            }
+        }
+
+        if (!suffering.shipsCoordinates.containsValue(shipIndex)) {
+            int keyX = -1;
+            int keyY = -1;
+            for (Point key : suffering.shipsCoordinatesCopy.keySet()) {
+                if (suffering.shipsCoordinatesCopy.get(key) == shipIndex) {
+                    keyX = (int) key.getX();
+                    keyY = (int) key.getY();
+                    attacker.enemyBoard.getMatrix()[keyX][keyY] = attacker.enemyBoard.getShipwreck();
+                    suffering.myBoard.getMatrix()[keyX][keyY] = suffering.myBoard.getShipwreck();
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public void checkWinnerAndLoser(PlayerHandler player1, PlayerHandler player2) {
@@ -162,6 +216,7 @@ public class Server {
         Board enemyBoard;
         ShipType[] ships;
         Map<Point, Integer> shipsCoordinates;
+        Map<Point, Integer> shipsCoordinatesCopy;
         int currentRow;
         int currentCol;
         int currentDir;
@@ -175,17 +230,17 @@ public class Server {
             enemyBoard = new Board();
             ships = new ShipType[]{ShipType.DESTROYER, ShipType.SUBMARINE, ShipType.BATTLESHIP, ShipType.CARRIER};
             shipsCoordinates = new ConcurrentHashMap<>();
+            shipsCoordinatesCopy = new ConcurrentHashMap<>();
         }
 
         @Override
         public void run() {
             sendMessage(WELCOME_INSTRUCTIONS);
             prepareBattle();
-            // sendBoards();
             checkIfPlayersReady(this);
         }
 
-        public void sendMessage(String message){
+        public void sendMessage(String message) {
             out.println(message);
         }
 
@@ -294,22 +349,24 @@ public class Server {
                     for (int i = 0; i < shipType.getShipLength(); i++) {
                         myBoard.getMatrix()[currentRow][currentCol + i] = myBoard.getShip();
 
-                        shipsCoordinates.put(new Point(currentRow,currentCol + i), shipIndex);
-                        System.out.println(shipsCoordinates);
+                        Point point = new Point(currentRow, currentCol + i);
+                        shipsCoordinates.put(point, shipIndex);
+                        shipsCoordinatesCopy.put(point, shipIndex);
+
                     }
                     break;
 
                 case 1:
                     for (int i = 0; i < shipType.getShipLength(); i++) {
                         myBoard.getMatrix()[currentRow + i][currentCol] = myBoard.getShip();
-                        shipsCoordinates.put(new Point(currentRow + i,currentCol), shipIndex);
+
+                        Point point = new Point(currentRow + i, currentCol);
+                        shipsCoordinates.put(point, shipIndex);
+                        shipsCoordinatesCopy.put(point, shipIndex);
+
                     }
                     break;
             }
-        }
-
-        public void checkIfShipDestroyed() {
-
         }
 
         private void askRow() {
@@ -409,13 +466,15 @@ public class Server {
                 numberOfTimesHit++;
                 pointToHit = myBoard.getHit();
 
-            } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit()) {
+
+            } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit() || pointToHit == myBoard.getShipwreck()) {
 
                 pointToHit = invalidPlayChar;
             }
 
             return pointToHit;
         }
+
 
         public void changeEnemyBoard(char result) {
             enemyBoard.getMatrix()[currentRow][currentCol] = result;

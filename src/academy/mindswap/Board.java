@@ -1,7 +1,5 @@
 package academy.mindswap;
 
-// import academy.mindswap.util.RandomGenerator; FIXME
-
 public class Board {
     private int width;
     private int height;
@@ -10,32 +8,20 @@ public class Board {
     private char ship = 'H';
     private char hit = 'X';
     private char miss = 'O';
-    private int numberOfShips;
-    private int numberOfShipsSunk;
+    private char shipwreck = '@';
 
     public Board() {
         width = 10;
         height = 10;
         matrix = new char[width][height];
-        numberOfShips = 4;
-        numberOfShipsSunk = 0;
     }
 
     public void createBoard() {
-
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
                 matrix[i][j] = water;
             }
         }
-    }
-
-    public void hit(int row, int col) {
-        matrix[row][col] = hit;
-    }
-
-    public void miss(int row, int col) {
-        matrix[row][col] = miss;
     }
 
     public char[][] getMatrix() {
@@ -61,4 +47,6 @@ public class Board {
     public char getMiss() {
         return miss;
     }
+
+    public char getShipwreck() { return shipwreck; }
 }
