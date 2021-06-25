@@ -4,9 +4,12 @@ import academy.mindswap.ships.ShipType;
 import academy.mindswap.util.RandomGenerator;
 
 import static academy.mindswap.util.Messages.*;
+
+import java.awt.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.io.*;
 
@@ -158,6 +161,7 @@ public class Server {
         Board myBoard;
         Board enemyBoard;
         ShipType[] ships;
+        Map<Point, Integer> shipsCoordinates;
         int currentRow;
         int currentCol;
         int currentDir;
@@ -170,6 +174,7 @@ public class Server {
             myBoard = new Board();
             enemyBoard = new Board();
             ships = new ShipType[]{ShipType.DESTROYER, ShipType.SUBMARINE, ShipType.BATTLESHIP, ShipType.CARRIER};
+            shipsCoordinates = new ConcurrentHashMap<>();
         }
 
         @Override
@@ -236,12 +241,13 @@ public class Server {
                 }
                 while (!checkShipPlacement(ships[i]));
 
-                drawShip(ships[i]);
+                drawShip(ships[i], i);
                 sendBoard(myBoard);
             }
         }
 
         public boolean checkShipPlacement(ShipType shipType) {
+
             if (myBoard.getMatrix()[currentRow][currentCol] != myBoard.getWater()) {
                 sendMessage(INVALID_POSITION);
                 return false;
@@ -281,21 +287,29 @@ public class Server {
             }
         }
 
-        public void drawShip(ShipType shipType) {
+        public void drawShip(ShipType shipType, Integer shipIndex) {
 
             switch (currentDir) {
                 case 0:
                     for (int i = 0; i < shipType.getShipLength(); i++) {
                         myBoard.getMatrix()[currentRow][currentCol + i] = myBoard.getShip();
+
+                        shipsCoordinates.put(new Point(currentRow,currentCol + i), shipIndex);
+                        System.out.println(shipsCoordinates);
                     }
                     break;
 
                 case 1:
                     for (int i = 0; i < shipType.getShipLength(); i++) {
                         myBoard.getMatrix()[currentRow + i][currentCol] = myBoard.getShip();
+                        shipsCoordinates.put(new Point(currentRow + i,currentCol), shipIndex);
                     }
                     break;
             }
+        }
+
+        public void checkIfShipDestroyed() {
+
         }
 
         private void askRow() {

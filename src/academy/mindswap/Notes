@@ -1,8 +1,6 @@
 TODO:
 
-- Check empty space between ships;
 - Check if whole ship is hit and therefore destroyed;
-- Insert commands (/quit);
 
 - Print divisors/win+loss/ship hit message;
 - Finish error/other messages;
