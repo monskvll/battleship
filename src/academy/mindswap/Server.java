@@ -1,6 +1,8 @@
 package academy.mindswap;
 
 import academy.mindswap.ships.ShipType;
+import academy.mindswap.util.RandomGenerator;
+
 import static academy.mindswap.util.Messages.*;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -61,30 +63,40 @@ public class Server {
 
     public void fight() {
 
-        PlayerHandler player1 = playerList.get(0);
-        PlayerHandler player2 = playerList.get(1);
         char invalidPlayChar = 'E';
         char successiveHitChar = 'X';
         char result;
         char result2;
 
+        PlayerHandler player1 = null;
+        PlayerHandler player2 = null;
 
+        int playerChance = RandomGenerator.randomNumberMinMax(0, 1);
+
+        if (playerChance == 0) {
+            player1 = playerList.get(0);
+            player2 = playerList.get(1);
+        } else {
+            player1 = playerList.get(1);
+            player2 = playerList.get(0);
+        }
 
         while (player1.numberOfTimesHit < 14 && player2.numberOfTimesHit < 14) {
 
             player1.out.printf(ROUND_NUMBER, roundNumber);
             player2.out.printf(ROUND_NUMBER, roundNumber);
 
-            player2.sendMessage(WAITING_FOR_OPPONENT);
-
             roundNumber++;
 
             do {
+
+                player2.sendMessage(WAITING_FOR_OPPONENT);
+
                 do {
                     player1.attack();
                     result = player2.sufferAttack(player1.currentRow, player1.currentCol);
                     if (result == invalidPlayChar) {
-                        player1.sendMessage(INVALID_PLAYER_PLAY); // TODO
+                        player1.sendMessage(INVALID_PLAYER_PLAY);
                     }
                 } while (result == invalidPlayChar);
 
@@ -92,20 +104,19 @@ public class Server {
                 player1.sendBoards();
                 player2.sendBoards();
 
-            } while (result == successiveHitChar);
-
-
+            } while (result == successiveHitChar && player2.numberOfTimesHit < 14);
 
             if (player2.numberOfTimesHit < 14) {
 
-                player1.sendMessage(WAITING_FOR_OPPONENT);
-
                 do {
+
+                    player1.sendMessage(WAITING_FOR_OPPONENT);
+
                     do {
                         player2.attack();
                         result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
                         if (result2 == invalidPlayChar) {
-                            player2.sendMessage(INVALID_PLAYER_PLAY); // TODO
+                            player2.sendMessage(INVALID_PLAYER_PLAY);
                         }
                     } while (result2 == invalidPlayChar);
 
@@ -113,8 +124,20 @@ public class Server {
                     player2.sendBoards();
                     player1.sendBoards();
 
-                } while (result2 == successiveHitChar);
+                } while (result2 == successiveHitChar && player1.numberOfTimesHit < 14);
             }
+        }
+
+        checkWinnerAndLoser(player1, player2);
+    }
+
+    public void checkWinnerAndLoser(PlayerHandler player1, PlayerHandler player2) {
+        if (player1.numberOfTimesHit == 14) {
+            player1.sendMessage(PLAYER_LOSS);
+            player2.sendMessage(PLAYER_WIN);
+        } else {
+            player1.sendMessage(PLAYER_WIN);
+            player2.sendMessage(PLAYER_LOSS);
         }
     }
 
@@ -151,26 +174,11 @@ public class Server {
 
         @Override
         public void run() {
-            sendMessage(PLAYER_CONNECTED);
+            sendMessage(WELCOME_INSTRUCTIONS);
             prepareBattle();
             // sendBoards();
             checkIfPlayersReady(this);
         }
-
-        /**
-         * """"""""METODO PARA DAR A ILUSAO DE ESPERAR x SEGUNDOS"""" // FIXME
-
-        public void wait(int k){
-            long time0, time1;
-            time0 = System.currentTimeMillis();
-
-            do{
-                time1 = System.currentTimeMillis();
-            }
-            while (time1 - time0 < k * 1000);
-        }
-         */
-
 
         public void sendMessage(String message){
             out.println(message);
