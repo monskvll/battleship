@@ -30,7 +30,6 @@ public class Board {
         }
     }
 
-
     public void hit(int row, int col) {
         matrix[row][col] = hit;
     }

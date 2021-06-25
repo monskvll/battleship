@@ -2,16 +2,15 @@ package academy.mindswap;
 
 import java.io.*;
 import java.net.Socket;
+import static academy.mindswap.util.Messages.*;
 
 public class Player {
 
-    private String name;
     private BufferedReader userInput;
     private PrintWriter out;
     private Socket clientSocket;
 
     public Player() {
-
     }
 
     public static void main(String[] args) {
@@ -23,10 +22,6 @@ public class Player {
 
         try {
             clientSocket = new Socket("localhost", 8080);
-
-            if (clientSocket.isConnected()) {
-                System.out.println("Connected.");
-            }
 
             userInput = new BufferedReader(new InputStreamReader(System.in));
             out = new PrintWriter(clientSocket.getOutputStream(), true);

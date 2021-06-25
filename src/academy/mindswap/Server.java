@@ -1,10 +1,7 @@
 package academy.mindswap;
 
 import academy.mindswap.ships.ShipType;
-import academy.mindswap.util.Messages;
-
 import static academy.mindswap.util.Messages.*;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,6 +14,7 @@ public class Server {
     static int clientsConnected = 0;
     private static CopyOnWriteArrayList<PlayerHandler> playerList;
     private int playersReady = 0;
+    private int roundNumber = 1;
 
     public static void main(String[] args) {
         int PORT = 8080;
@@ -26,6 +24,7 @@ public class Server {
     }
 
     public void listen(int port) {
+
         playerList = new CopyOnWriteArrayList<>();
 
         ServerSocket serverSocket = null;
@@ -64,51 +63,67 @@ public class Server {
 
         PlayerHandler player1 = playerList.get(0);
         PlayerHandler player2 = playerList.get(1);
+        char invalidPlayChar = 'E';
+        char successiveHitChar = 'X';
         char result;
         char result2;
 
+
+
         while (player1.numberOfTimesHit < 14 && player2.numberOfTimesHit < 14) {
+
+            player1.out.printf(ROUND_NUMBER, roundNumber);
+            player2.out.printf(ROUND_NUMBER, roundNumber);
+
+            player2.sendMessage(WAITING_FOR_OPPONENT);
+
+            roundNumber++;
+
             do {
                 do {
                     player1.attack();
                     result = player2.sufferAttack(player1.currentRow, player1.currentCol);
-                    if (result == 'E') {
-                        player1.out.println("Invalid play."); // TODO
+                    if (result == invalidPlayChar) {
+                        player1.sendMessage(INVALID_PLAYER_PLAY); // TODO
                     }
-                } while (result == 'E');
+                } while (result == invalidPlayChar);
 
                 player1.changeEnemyBoard(result);
                 player1.sendBoards();
                 player2.sendBoards();
 
-            } while (result == 'X');
+            } while (result == successiveHitChar);
+
+
 
             if (player2.numberOfTimesHit < 14) {
+
+                player1.sendMessage(WAITING_FOR_OPPONENT);
 
                 do {
                     do {
                         player2.attack();
                         result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
-                        if (result2 == 'E') {
-                            player2.out.println("Invalid play."); // TODO
+                        if (result2 == invalidPlayChar) {
+                            player2.sendMessage(INVALID_PLAYER_PLAY); // TODO
                         }
-                    } while (result2 == 'E');
+                    } while (result2 == invalidPlayChar);
 
                     player2.changeEnemyBoard(result2);
                     player2.sendBoards();
                     player1.sendBoards();
 
-                } while (result2 == 'X');
+                } while (result2 == successiveHitChar);
             }
         }
-
-
     }
 
-    public void checkIfPlayersReady() {
+    public void checkIfPlayersReady(PlayerHandler player) {
         if (playersReady == NUMBER_OF_MAX_CLIENTS) {
             fight();
+            return;
         }
+        player.sendMessage(WAITING_FOR_OPPONENT);
     }
 
     class PlayerHandler implements Runnable {
@@ -119,7 +134,6 @@ public class Server {
 
         Board myBoard;
         Board enemyBoard;
-        String username;
         ShipType[] ships;
         int currentRow;
         int currentCol;
@@ -135,26 +149,46 @@ public class Server {
             ships = new ShipType[]{ShipType.DESTROYER, ShipType.SUBMARINE, ShipType.BATTLESHIP, ShipType.CARRIER};
         }
 
-
         @Override
         public void run() {
+            sendMessage(PLAYER_CONNECTED);
             prepareBattle();
-            sendBoards();
-            checkIfPlayersReady();
+            // sendBoards();
+            checkIfPlayersReady(this);
+        }
 
+        /**
+         * """"""""METODO PARA DAR A ILUSAO DE ESPERAR x SEGUNDOS"""" // FIXME
+
+        public void wait(int k){
+            long time0, time1;
+            time0 = System.currentTimeMillis();
+
+            do{
+                time1 = System.currentTimeMillis();
+            }
+            while (time1 - time0 < k * 1000);
+        }
+         */
+
+
+        public void sendMessage(String message){
+            out.println(message);
         }
 
         public void prepareBattle() {
             myBoard.createBoard();
             enemyBoard.createBoard();
-
             sendBoard(myBoard);
             placeShips();
             playersReady++;
         }
 
         public void sendBoards() {
+            sendMessage(PLAYER_BOARD);
             sendBoard(myBoard);
+            sendMessage(DIVISOR);
+            sendMessage(ENEMY_BOARD);
             sendBoard(enemyBoard);
         }
 
@@ -182,7 +216,6 @@ public class Server {
             out.flush();
         }
 
-
         public void placeShips() {
 
             for (int i = 0; i < ships.length; i++) {
@@ -197,26 +230,25 @@ public class Server {
 
                 drawShip(ships[i]);
                 sendBoard(myBoard);
-
             }
         }
 
         public boolean checkShipPlacement(ShipType shipType) {
             if (myBoard.getMatrix()[currentRow][currentCol] != myBoard.getWater()) {
-                out.println(INVALID_POSITION);
+                sendMessage(INVALID_POSITION);
                 return false;
             }
 
             switch (currentDir) {
                 case 0:
                     if (currentCol + shipType.getShipLength() > 9) {
-                        out.println(OUT_OF_BORDERS);
+                        sendMessage(OUT_OF_BORDERS);
                         return false;
                     }
 
                     for (int i = 1; i < shipType.getShipLength(); i++) {
                         if (myBoard.getMatrix()[currentRow][currentCol + i] != myBoard.getWater()) {
-                            out.println(INVALID_POSITION);
+                            sendMessage(INVALID_POSITION);
                             return false;
                         }
                     }
@@ -224,13 +256,13 @@ public class Server {
 
                 case 1:
                     if (currentRow + shipType.getShipLength() > 9) {
-                        out.println(OUT_OF_BORDERS);
+                        sendMessage(OUT_OF_BORDERS);
                         return false;
                     }
 
                     for (int i = 1; i < shipType.getShipLength(); i++) {
                         if (myBoard.getMatrix()[currentRow + i][currentCol] != myBoard.getWater()) {
-                            out.println(INVALID_POSITION);
+                            sendMessage(INVALID_POSITION);
                             return false;
                         }
                     }
@@ -240,7 +272,6 @@ public class Server {
                     return false;
             }
         }
-
 
         public void drawShip(ShipType shipType) {
 
@@ -259,12 +290,11 @@ public class Server {
             }
         }
 
-
         private void askRow() {
 
             int userInputInt = 0;
 
-            out.println(INSERT_ROW);
+            sendMessage(INSERT_ROW);
 
             try {
                 String userInputString = in.readLine();
@@ -274,11 +304,11 @@ public class Server {
                     currentRow = userInputInt - 1; // -1 to ensure array/console print fidelity
                     return;
                 }
-                out.println(INVALID_ROW);
+                sendMessage(INVALID_ROW);
                 askRow();
 
             } catch (NumberFormatException e) {
-                out.println(INVALID_ROW);
+                sendMessage(INVALID_ROW);
                 askRow();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -290,7 +320,7 @@ public class Server {
 
             int userInputInt = 0;
 
-            out.println(INSERT_COL);
+            sendMessage(INSERT_COL);
 
             try {
                 String userInputString = in.readLine();
@@ -300,11 +330,11 @@ public class Server {
                     currentCol = userInputInt - 1; // -1 to ensure array/console print fidelity
                     return;
                 }
-                out.println(INVALID_COL);
+                sendMessage(INVALID_COL);
                 askCol();
 
             } catch (NumberFormatException e) {
-                out.println(INVALID_COL);
+                sendMessage(INVALID_COL);
                 askCol();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -315,7 +345,7 @@ public class Server {
 
             int userInputInt = 0;
 
-            out.println(INSERT_DIR);
+            sendMessage(INSERT_DIR);
 
             try {
                 String userInputString = in.readLine();
@@ -325,11 +355,11 @@ public class Server {
                     currentDir = userInputInt;
                     return;
                 }
-                out.println(INVALID_DIR);
+                sendMessage(INVALID_DIR);
                 askDir();
 
             } catch (NumberFormatException e) {
-                out.println(INVALID_DIR);
+                sendMessage(INVALID_DIR);
                 askDir();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -339,22 +369,27 @@ public class Server {
         public void attack() {
             askRow();
             askCol();
-
         }
 
         public char sufferAttack(int row, int col) {
 
             char pointToHit = myBoard.getMatrix()[row][col];
+            char invalidPlayChar = 'E';
 
             if (pointToHit == myBoard.getWater()) {
+
                 myBoard.getMatrix()[row][col] = myBoard.getMiss();
                 pointToHit = myBoard.getMiss();
+
             } else if (pointToHit == myBoard.getShip()) {
+
                 myBoard.getMatrix()[row][col] = myBoard.getHit();
                 numberOfTimesHit++;
                 pointToHit = myBoard.getHit();
+
             } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit()) {
-                pointToHit = 'E';
+
+                pointToHit = invalidPlayChar;
             }
 
             return pointToHit;
@@ -363,7 +398,5 @@ public class Server {
         public void changeEnemyBoard(char result) {
             enemyBoard.getMatrix()[currentRow][currentCol] = result;
         }
-
-
     }
 }

@@ -1,11 +1,11 @@
-Place ships:
+TODO:
 
-// ask for each ship
-    // row ---> verify
-    // col ---> verify
-    // dir ---> verify
-    // check availability (if it is out of bounds, if there is already a boat)
-           // if ok place ship
-           // if not repeat
+- Check empty space between ships;
+- Check if whole ship is hit and therefore destroyed;
+- Insert commands (/quit);
 
-           Close readers/writer
+- Print divisors/win+loss/ship hit message;
+- Finish error/other messages;
+- Search for all FIXME / TODO tags;
+- Write documentation;
+- Close readers/writers/sockets
