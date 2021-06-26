@@ -8,6 +8,11 @@ import java.net.Socket;
 
 import static academy.mindswap.util.Messages.*;
 
+/**
+ * Player class which contains a Buffered Reader for Server input, a Buffered Reader for User input, a PrintWriter for
+ * User output and a client Socket for connectivity. Contains its constructor, a start method, a console input reading
+ * method and an input writing method.
+ */
 public class Player {
 
     private BufferedReader in;
@@ -15,11 +20,19 @@ public class Player {
     private PrintWriter out;
     private Socket clientSocket;
 
+    /**
+     * Player main method.
+     * @param args main args
+     */
     public static void main(String[] args) {
         Player player = new Player();
         player.start();
     }
 
+    /**
+     * Player starting method, which creates its Socket, Buffered Readers and Buffered Writer, allowing for inputs to be
+     * sent/received to/from the server.
+     */
     public void start() {
 
         try {
@@ -46,6 +59,10 @@ public class Player {
         }
     }
 
+    /**
+     * Console input reading method.
+     * @return console input
+     */
     public String readConsoleInput() {
         String input = "";
 
@@ -59,6 +76,10 @@ public class Player {
         return input;
     }
 
+    /**
+     * Input writing method.
+     * @param input
+     */
     public void writeInput(String input) {
 
         out.println(input);

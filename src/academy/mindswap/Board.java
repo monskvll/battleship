@@ -1,48 +1,39 @@
 package academy.mindswap;
 
-public class Board {
-    private int width;
-    private int height;
-    private char[][] matrix;
-    private char water = '~';
-    private char ship = 'H';
-    private char hit = 'X';
-    private char miss = 'O';
-    private char shipwreck = '@';
+import static academy.mindswap.util.Symbols.WATER;
 
+/**
+ * Board class which contains board width, height and matrix, along with Board constructor,
+ * board creating method and matrix getter.
+ */
+public class Board {
+    private final char[][] matrix;
+
+    /**
+     * Board constructor.
+     */
     public Board() {
-        width = 10;
-        height = 10;
+        int width = 10;
+        int height = 10;
         matrix = new char[width][height];
     }
 
+    /**
+     * Board creating method, resulting in a matrix that fills it with the specified Symbol char.
+     */
     public void createBoard() {
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
-                matrix[i][j] = water;
+                matrix[i][j] = WATER;
             }
         }
     }
 
+    /**
+     * Matrix getter.
+     * @return matrix
+     */
     public char[][] getMatrix() {
         return matrix;
     }
-
-    public char getWater() {
-        return water;
-    }
-
-    public char getShip() {
-        return ship;
-    }
-
-    public char getHit() {
-        return hit;
-    }
-
-    public char getMiss() {
-        return miss;
-    }
-
-    public char getShipwreck() { return shipwreck; }
 }
