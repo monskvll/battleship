@@ -9,13 +9,14 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.io.*;
 
 public class Server {
 
-    public static int NUMBER_OF_MAX_CLIENTS = 4;
+    public static int NUMBER_OF_MAX_CLIENTS = 2;
     static int clientsConnected = 0;
     private static CopyOnWriteArrayList<PlayerHandler> playerList;
     private int playersReady = 0;
@@ -57,14 +58,19 @@ public class Server {
                     clientsConnected++;
                 }
             }
+            serverSocket.close();
+
             System.out.println("Server socket closed: " + serverSocket.isClosed());
 
         } catch (IOException e) {
             e.printStackTrace();
+
         }
     }
 
-    public void fight() {
+
+
+    public void fight() throws IOException{
 
         char invalidPlayChar = 'E';
         char successiveHitChar = 'X';
@@ -160,6 +166,7 @@ public class Server {
         }
 
         checkWinnerAndLoser(player1, player2);
+        disconnectPlayers();
     }
 
     public boolean checkIfShipDestroyed(PlayerHandler suffering, PlayerHandler attacker) {
@@ -198,12 +205,23 @@ public class Server {
         }
     }
 
-    public void checkIfPlayersReady(PlayerHandler player) {
+
+    public void startBattle(PlayerHandler player) throws IOException {
         if (playersReady == NUMBER_OF_MAX_CLIENTS) {
             fight();
-            return;
         }
         player.sendMessage(WAITING_FOR_OPPONENT);
+    }
+
+    public void disconnectPlayers() {
+        try {
+            playerList.get(0).clientSocket.close();
+            playerList.get(1).clientSocket.close();
+            System.out.println("FECHADAS");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     class PlayerHandler implements Runnable {
@@ -235,16 +253,29 @@ public class Server {
 
         @Override
         public void run() {
-            sendMessage(WELCOME_INSTRUCTIONS);
-            prepareBattle();
-            checkIfPlayersReady(this);
+
+
+            try {
+                sendMessage(WELCOME_INSTRUCTIONS);
+                prepareBattle();
+                startBattle(this);
+            } catch (IOException e) {
+                try {
+                    clientSocket.close();
+                } catch (IOException i) {
+                    System.out.println("blablabla");
+                }
+
+            }
+
+
         }
 
         public void sendMessage(String message) {
             out.println(message);
         }
 
-        public void prepareBattle() {
+        public void prepareBattle() throws IOException {
             myBoard.createBoard();
             enemyBoard.createBoard();
             sendBoard(myBoard);
@@ -284,7 +315,7 @@ public class Server {
             out.flush();
         }
 
-        public void placeShips() {
+        public void placeShips() throws IOException {
 
             for (int i = 0; i < ships.length; i++) {
                 out.printf(PLACE_SHIP, ships[i].getShipName(), ships[i].getShipLength());
@@ -369,7 +400,7 @@ public class Server {
             }
         }
 
-        private void askRow() {
+        private void askRow() throws IOException{
 
             int userInputInt = 0;
 
@@ -389,13 +420,10 @@ public class Server {
             } catch (NumberFormatException e) {
                 sendMessage(INVALID_ROW);
                 askRow();
-            } catch (IOException e) {
-                e.printStackTrace();
-
             }
         }
 
-        public void askCol() {
+        public void askCol() throws IOException {
 
             int userInputInt = 0;
 
@@ -415,12 +443,10 @@ public class Server {
             } catch (NumberFormatException e) {
                 sendMessage(INVALID_COL);
                 askCol();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
 
-        public void askDir() {
+        public void askDir() throws IOException {
 
             int userInputInt = 0;
 
@@ -440,12 +466,11 @@ public class Server {
             } catch (NumberFormatException e) {
                 sendMessage(INVALID_DIR);
                 askDir();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
 
-        public void attack() {
+        public void attack() throws IOException{
+
             askRow();
             askCol();
         }
