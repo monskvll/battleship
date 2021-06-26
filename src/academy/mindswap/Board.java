@@ -28,10 +28,6 @@ public class Board {
         return matrix;
     }
 
-    public void setMatrix(char[][] matrix) {
-        this.matrix = matrix;
-    }
-
     public char getWater() {
         return water;
     }

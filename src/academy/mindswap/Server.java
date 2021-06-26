@@ -9,7 +9,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.io.*;
@@ -69,10 +68,8 @@ public class Server {
     }
 
 
-
     public void fight() throws IOException{
 
-        char invalidPlayChar = 'E';
         char successiveHitChar = 'X';
         char successiveShipwreckChar = '@';
         char result;
@@ -102,31 +99,7 @@ public class Server {
 
                 player2.sendMessage(WAITING_FOR_OPPONENT);
 
-                do {
-                    player1.attack();
-
-                    result = player2.sufferAttack(player1.currentRow, player1.currentCol);
-
-                    switch (result) {
-                        case 'O':
-                            player1.changeEnemyBoard(result);
-                            break;
-                        case 'X':
-                            if(!checkIfShipDestroyed(player2, player1)) {
-                                player1.changeEnemyBoard(result);
-                            }
-                            break;
-                        case 'E':
-                            player1.sendMessage(INVALID_PLAYER_PLAY);
-                            break;
-                        default:
-                            break;
-                    }
-
-                } while (result == invalidPlayChar);
-
-                player1.sendBoards();
-                player2.sendBoards();
+                result = fire(player1, player2);
 
             } while ((result == successiveShipwreckChar || result == successiveHitChar) && player2.numberOfTimesHit < 14);
 
@@ -136,30 +109,7 @@ public class Server {
 
                     player1.sendMessage(WAITING_FOR_OPPONENT);
 
-                    do {
-                        player2.attack();
-                        result2 = player1.sufferAttack(player2.currentRow, player2.currentCol);
-
-                        switch (result2) {
-                            case 'O':
-                                player2.changeEnemyBoard(result2);
-                                break;
-                            case 'X':
-                                if(!checkIfShipDestroyed(player1, player2)) {
-                                    player2.changeEnemyBoard(result2);
-                                }
-                                break;
-                            case 'E':
-                                player2.sendMessage(INVALID_PLAYER_PLAY);
-                                break;
-                            default:
-                                break;
-                        }
-
-                    } while (result2 == invalidPlayChar);
-
-                    player2.sendBoards();
-                    player1.sendBoards();
+                    result2 = fire(player2, player1);
 
                 } while ((result2 == successiveShipwreckChar || result2 == successiveHitChar) && player1.numberOfTimesHit < 14);
             }
@@ -168,6 +118,45 @@ public class Server {
         checkWinnerAndLoser(player1, player2);
         disconnectPlayers();
     }
+
+    public char fire(PlayerHandler attacker, PlayerHandler defender) throws IOException {
+
+        char invalidPlayChar = 'E';
+        char result;
+
+        do {
+
+            attacker.attack();
+            result = defender.sufferAttack(attacker.currentRow, attacker.currentCol);
+
+            switch (result) {
+                case 'O':
+                    attacker.changeEnemyBoard(result);
+                    break;
+                case 'X':
+                    if(!checkIfShipDestroyed(defender, attacker)) {
+                        attacker.changeEnemyBoard(result);
+                    }
+                    break;
+                case 'E':
+                    attacker.sendMessage(INVALID_PLAYER_PLAY);
+                    break;
+                default:
+                    break;
+            }
+
+        } while (result == invalidPlayChar);
+
+        attacker.sendBoards();
+        defender.sendBoards();
+
+        return result;
+    }
+
+
+    /**
+     * Checks if ALL ships have been sunk for a given player
+     */
 
     public boolean checkIfShipDestroyed(PlayerHandler suffering, PlayerHandler attacker) {
         int shipIndex = -1;
@@ -205,7 +194,6 @@ public class Server {
         }
     }
 
-
     public void startBattle(PlayerHandler player) throws IOException {
         if (playersReady == NUMBER_OF_MAX_CLIENTS) {
             fight();
@@ -217,7 +205,6 @@ public class Server {
         try {
             playerList.get(0).clientSocket.close();
             playerList.get(1).clientSocket.close();
-            System.out.println("FECHADAS");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -251,13 +238,31 @@ public class Server {
             shipsCoordinatesCopy = new ConcurrentHashMap<>();
         }
 
+        /**
+         * Gives the illusion of waiting without hanging the thread (given a number "k" in seconds)
+         */
+
+        public void wait(int k){
+            long time0, time1;
+            time0 = System.currentTimeMillis();
+            do{
+                time1 = System.currentTimeMillis();
+            }
+            while (time1 - time0 < k * 1000);
+        }
+
+
         @Override
         public void run() {
 
-
             try {
-                sendMessage(WELCOME_INSTRUCTIONS);
+                wait(2);
+                sendMessage(WELCOME);
+                wait(3);
+                sendMessage(INSTRUCTIONS);
+                wait(5);
                 prepareBattle();
+                wait(2);
                 startBattle(this);
             } catch (IOException e) {
                 try {
@@ -265,10 +270,7 @@ public class Server {
                 } catch (IOException i) {
                     System.out.println("blablabla");
                 }
-
             }
-
-
         }
 
         public void sendMessage(String message) {
@@ -332,6 +334,10 @@ public class Server {
             }
         }
 
+        /**
+         * Validates the coordinates given by the user
+         */
+
         public boolean checkShipPlacement(ShipType shipType) {
 
             if (myBoard.getMatrix()[currentRow][currentCol] != myBoard.getWater()) {
@@ -373,6 +379,11 @@ public class Server {
             }
         }
 
+
+        /**
+         * Method to add a Ship to a player's board
+         */
+
         public void drawShip(ShipType shipType, Integer shipIndex) {
 
             switch (currentDir) {
@@ -394,13 +405,12 @@ public class Server {
                         Point point = new Point(currentRow + i, currentCol);
                         shipsCoordinates.put(point, shipIndex);
                         shipsCoordinatesCopy.put(point, shipIndex);
-
                     }
                     break;
             }
         }
 
-        private void askRow() throws IOException{
+        private void askRow() throws IOException {
 
             int userInputInt = 0;
 
@@ -469,7 +479,7 @@ public class Server {
             }
         }
 
-        public void attack() throws IOException{
+        public void attack() throws IOException {
 
             askRow();
             askCol();
@@ -485,21 +495,22 @@ public class Server {
                 myBoard.getMatrix()[row][col] = myBoard.getMiss();
                 pointToHit = myBoard.getMiss();
 
+                /**
+                 * Checks if the given coordinates correspond to a ship from the other player
+                 */
+
             } else if (pointToHit == myBoard.getShip()) {
 
                 myBoard.getMatrix()[row][col] = myBoard.getHit();
                 numberOfTimesHit++;
                 pointToHit = myBoard.getHit();
 
-
             } else if (pointToHit == myBoard.getMiss() || pointToHit == myBoard.getHit() || pointToHit == myBoard.getShipwreck()) {
 
                 pointToHit = invalidPlayChar;
             }
-
             return pointToHit;
         }
-
 
         public void changeEnemyBoard(char result) {
             enemyBoard.getMatrix()[currentRow][currentCol] = result;

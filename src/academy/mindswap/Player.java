@@ -6,12 +6,14 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import static academy.mindswap.util.Messages.*;
+
 public class Player {
 
+    private BufferedReader in;
     private BufferedReader userInput;
     private PrintWriter out;
     private Socket clientSocket;
-    private boolean isPaused;
 
     public static void main(String[] args) {
         Player player = new Player();
@@ -24,14 +26,20 @@ public class Player {
             clientSocket = new Socket("localhost", 8080);
             userInput = new BufferedReader(new InputStreamReader(System.in));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
-            Thread serverReaderThread = new Thread(new ServerReader());
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-            serverReaderThread.start();
+            String line = "";
 
-            while (!clientSocket.isClosed()) {
-                String input = readConsoleInput();
-                writeInput(input);
+            while ((line = in.readLine()) != null) {
+                System.out.println(line);
+                if (line.equals(INSERT_ROW) || line.equals(INSERT_COL) || line.equals(INSERT_DIR)) {
+                    String input = readConsoleInput();
+                    writeInput(input);
+                }
             }
+
+            clientSocket.close();
+            System.exit(0);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,6 +50,7 @@ public class Player {
         String input = "";
 
         try {
+
             input = userInput.readLine();
 
         } catch (IOException e) {
@@ -51,42 +60,7 @@ public class Player {
     }
 
     public void writeInput(String input) {
-//        if (isPaused) {
-//            try {
-//                System.out.println("Waiting is working.");
-//                wait();
-//            } catch (InterruptedException e) {
-//                System.out.println("WriteInput Interrupted Exception");
-//            }
-//        }
-        /// NOTIFY WHERE?
+
         out.println(input);
-    }
-
-    class ServerReader implements Runnable {
-
-
-        @Override
-        public void run() {
-            BufferedReader in;
-
-            try {
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String line = "";
-                while ((line = in.readLine()) != null) {
-                    System.out.println(line);
-//                    if (line.startsWith("Waiting")) {
-//                        isPaused = true;
-//                        continue;
-//                    } else {
-//                        isPaused = false;
-//                    }
-                }
-                clientSocket.close();
-                System.exit(0);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

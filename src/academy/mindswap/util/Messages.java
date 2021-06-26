@@ -13,7 +13,8 @@ public class Messages {
     public static final String OUT_OF_BORDERS = "Can't place the ship in that positions.";
     public static final String SERVER_STARTING = "STARTING SERVER, please wait...";
     public static final String INVALID_PLAYER_PLAY = "You already attacked this position.";
-    public static final String WELCOME_INSTRUCTIONS = "Welcome to Battleship!\nPlace your (4) ships in the battlefield and prepare for war!\n" +
+    public static final String WELCOME = "Welcome to Battleship";
+    public static final String INSTRUCTIONS = "Place your (4) ships in the battlefield and prepare for war!\n" +
             "\n" +
             "Symbols:\n" +
             "H - Ship\n" +
